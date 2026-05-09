@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAE Decoder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>AAE Decoder</h1>
+    <p class="subtitle">Drop an Apple AAE sidecar file to view its raw XML and decoded adjustment data.</p>
+
+    <div class="drop-zone" id="dropZone">
+        <p>Drag &amp; drop an .AAE file here</p>
+        <button type="button" id="browseBtn">or browse to select</button>
+        <input type="file" id="fileInput" accept=".aae,.AAE">
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="filename" id="fileName"></div>
+
+    <div class="output-section" id="rawSection">
+        <h2>Raw XML</h2>
+        <pre id="rawXml"></pre>
+    </div>
+
+    <div class="output-section" id="decodedSection">
+        <h2>Decoded Adjustment Data (JSON)</h2>
+        <pre id="decodedJson"></pre>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
