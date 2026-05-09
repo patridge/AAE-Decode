@@ -21,6 +21,91 @@ h1 {
     margin-bottom: 24px;
 }
 
+.input-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    max-width: 600px;
+    margin: 0 auto 16px;
+}
+
+.toggle-btn {
+    background: #fff;
+    color: #1d1d1f;
+    border: 1px solid #86868b;
+    padding: 8px 24px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.toggle-btn:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.toggle-btn:last-child {
+    border-radius: 0 8px 8px 0;
+    border-left: none;
+}
+
+.toggle-btn.active {
+    background: #0071e3;
+    color: #fff;
+    border-color: #0071e3;
+}
+
+.toggle-btn.active + .toggle-btn {
+    border-left: 1px solid #86868b;
+}
+
+.text-input-zone {
+    max-width: 600px;
+    margin: 0 auto 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.text-input-zone.hidden {
+    display: none;
+}
+
+.text-input-zone textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 12px;
+    border: 2px solid #86868b;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.85em;
+    resize: vertical;
+    background: #fff;
+}
+
+.text-input-zone textarea:focus {
+    outline: none;
+    border-color: #0071e3;
+}
+
+.text-input-zone button {
+    align-self: flex-end;
+    background: #0071e3;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+.text-input-zone button:hover {
+    background: #0077ed;
+}
+
+.drop-zone.hidden {
+    display: none;
+}
+
 .drop-zone {
     border: 2px dashed #86868b;
     border-radius: 12px;

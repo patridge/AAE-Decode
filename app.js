@@ -8,6 +8,45 @@ const rawXmlEl = document.getElementById("rawXml");
 const decodedSection = document.getElementById("decodedSection");
 const decodedHeading = document.getElementById("decodedHeading");
 const decodedJsonEl = document.getElementById("decodedJson");
+const toggleFile = document.getElementById("toggleFile");
+const toggleText = document.getElementById("toggleText");
+const textInputZone = document.getElementById("textInputZone");
+const textInput = document.getElementById("textInput");
+const decodeBtn = document.getElementById("decodeBtn");
+
+function clearOutputs() {
+    clearError();
+    rawSection.classList.remove("visible");
+    decodedSection.classList.remove("visible");
+    fileNameEl.textContent = "";
+}
+
+toggleFile.addEventListener("click", () => {
+    if (toggleFile.classList.contains("active")) return;
+    toggleFile.classList.add("active");
+    toggleText.classList.remove("active");
+    dropZone.classList.remove("hidden");
+    textInputZone.classList.add("hidden");
+    textInput.value = "";
+    clearOutputs();
+});
+
+toggleText.addEventListener("click", () => {
+    if (toggleText.classList.contains("active")) return;
+    toggleText.classList.add("active");
+    toggleFile.classList.remove("active");
+    dropZone.classList.add("hidden");
+    textInputZone.classList.remove("hidden");
+    fileInput.value = "";
+    clearOutputs();
+});
+
+decodeBtn.addEventListener("click", () => {
+    const xmlText = textInput.value.trim();
+    if (xmlText) {
+        processXmlText(xmlText, null);
+    }
+});
 
 browseBtn.addEventListener("click", () => fileInput.click());
 
@@ -45,32 +84,35 @@ function clearError() {
 }
 
 function handleFile(file) {
-    clearError();
-    rawSection.classList.remove("visible");
-    decodedSection.classList.remove("visible");
-    fileNameEl.textContent = "";
+    clearOutputs();
 
     const reader = new FileReader();
     reader.onload = async (e) => {
-        const xmlText = e.target.result;
-
-        fileNameEl.textContent = file.name;
-        rawXmlEl.textContent = xmlText;
-        rawSection.classList.add("visible");
-
-        try {
-            const result = await decodeAdjustmentData(xmlText);
-            decodedHeading.textContent = result.format === "bplist"
-                ? "Decoded Adjustment Data (Binary Plist)"
-                : "Decoded Adjustment Data (JSON)";
-            decodedJsonEl.textContent = result.text;
-            decodedSection.classList.add("visible");
-        } catch (err) {
-            showError("Failed to decode adjustment data: " + err.message);
-        }
+        processXmlText(e.target.result, file.name);
     };
     reader.onerror = () => showError("Failed to read file.");
     reader.readAsText(file);
+}
+
+async function processXmlText(xmlText, fileName) {
+    clearOutputs();
+
+    if (fileName) {
+        fileNameEl.textContent = fileName;
+    }
+    rawXmlEl.textContent = xmlText;
+    rawSection.classList.add("visible");
+
+    try {
+        const result = await decodeAdjustmentData(xmlText);
+        decodedHeading.textContent = result.format === "bplist"
+            ? "Decoded Adjustment Data (Binary Plist)"
+            : "Decoded Adjustment Data (JSON)";
+        decodedJsonEl.textContent = result.text;
+        decodedSection.classList.add("visible");
+    } catch (err) {
+        showError("Failed to decode adjustment data: " + err.message);
+    }
 }
 
 async function decodeAdjustmentData(xmlText) {
