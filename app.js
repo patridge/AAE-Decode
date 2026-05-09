@@ -6,6 +6,7 @@ const fileNameEl = document.getElementById("fileName");
 const rawSection = document.getElementById("rawSection");
 const rawXmlEl = document.getElementById("rawXml");
 const decodedSection = document.getElementById("decodedSection");
+const decodedHeading = document.getElementById("decodedHeading");
 const decodedJsonEl = document.getElementById("decodedJson");
 
 browseBtn.addEventListener("click", () => fileInput.click());
@@ -58,8 +59,11 @@ function handleFile(file) {
         rawSection.classList.add("visible");
 
         try {
-            const decoded = await decodeAdjustmentData(xmlText);
-            decodedJsonEl.textContent = decoded;
+            const result = await decodeAdjustmentData(xmlText);
+            decodedHeading.textContent = result.format === "bplist"
+                ? "Decoded Adjustment Data (Binary Plist)"
+                : "Decoded Adjustment Data (JSON)";
+            decodedJsonEl.textContent = result.text;
             decodedSection.classList.add("visible");
         } catch (err) {
             showError("Failed to decode adjustment data: " + err.message);
@@ -111,11 +115,11 @@ async function decodeAdjustmentData(xmlText) {
     // Detect format: binary plist starts with "bplist00"
     const magic = new TextDecoder("ascii").decode(bytes.slice(0, 8));
     if (magic === "bplist00") {
-        return decodeBinaryPlist(bytes);
+        return { format: "bplist", text: decodeBinaryPlist(bytes) };
     }
 
     // Otherwise, try raw deflate decompression
-    return await decodeDeflateJson(bytes);
+    return { format: "json", text: await decodeDeflateJson(bytes) };
 }
 
 async function decodeDeflateJson(bytes) {
@@ -185,10 +189,10 @@ function decodeBinaryPlist(bytes) {
     // If it's an NSKeyedArchiver, unarchive it
     if (resolved && resolved.$archiver === "NSKeyedArchiver" && resolved.$objects) {
         const unarchived = unarchiveNSKeyedArchiver(resolved);
-        return JSON.stringify(unarchived, null, 2);
+        return toXmlPlist(unarchived);
     }
 
-    return JSON.stringify(resolved, null, 2);
+    return toXmlPlist(resolved);
 }
 
 function readUint64(view, offset) {
@@ -405,4 +409,78 @@ function unarchiveNSKeyedArchiver(root) {
     }
 
     return resolve(objects[topUid]);
+}
+
+// --- XML Plist serializer ---
+
+function toXmlPlist(obj) {
+    const lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">',
+        '<plist version="1.0">',
+    ];
+    serializePlistValue(obj, lines, 0);
+    lines.push("</plist>");
+    return lines.join("\n");
+}
+
+function serializePlistValue(value, lines, depth) {
+    const indent = "\t".repeat(depth);
+
+    if (value === null || value === undefined) {
+        return;
+    }
+
+    if (typeof value === "boolean") {
+        lines.push(indent + (value ? "<true/>" : "<false/>"));
+        return;
+    }
+
+    if (typeof value === "number") {
+        if (Number.isInteger(value)) {
+            lines.push(indent + "<integer>" + value + "</integer>");
+        } else {
+            lines.push(indent + "<real>" + value + "</real>");
+        }
+        return;
+    }
+
+    if (typeof value === "string") {
+        lines.push(indent + "<string>" + escapeXml(value) + "</string>");
+        return;
+    }
+
+    if (value.__bplist_data) {
+        const b64 = btoa(String.fromCharCode(...value.__bplist_data));
+        lines.push(indent + "<data>" + b64 + "</data>");
+        return;
+    }
+
+    if (Array.isArray(value)) {
+        lines.push(indent + "<array>");
+        for (const item of value) {
+            serializePlistValue(item, lines, depth + 1);
+        }
+        lines.push(indent + "</array>");
+        return;
+    }
+
+    if (typeof value === "object") {
+        lines.push(indent + "<dict>");
+        for (const [key, val] of Object.entries(value)) {
+            lines.push(indent + "\t<key>" + escapeXml(key) + "</key>");
+            serializePlistValue(val, lines, depth + 1);
+        }
+        lines.push(indent + "</dict>");
+        return;
+    }
+}
+
+function escapeXml(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
 }
